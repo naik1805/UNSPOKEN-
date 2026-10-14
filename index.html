@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="UNSPOKEN: The Cost of a Dream - An emotional 3D single-player narrative life journey from the school gates of SVEC to the quiet rain." />
+  <title>UNSPOKEN: The Cost of a Dream | 3D Life Game</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="loading">
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Cinematic Letterbox Bars -->
+  <div class="letterbox top-bar"></div>
+  <div class="letterbox bottom-bar"></div>
+
+  <!-- Atmospheric Vignette & Heartbeat Effect -->
+  <div id="heartbeat-vignette" class="vignette"></div>
+  <div id="rain-screen-overlay" class="rain-overlay"></div>
+  <div id="flash-overlay" class="flash-overlay"></div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="screen-overlay active">
+    <div class="loading-content">
+      <div class="loading-ornament">✦ SVEC MEMORIES ✦</div>
+      <h1 class="loading-title">UNSPOKEN</h1>
+      <p class="loading-subtitle">The Cost of a Dream</p>
+      <div class="progress-bar-wrap">
+        <div id="loading-bar" class="progress-bar-fill"></div>
+      </div>
+      <p id="loading-text" class="loading-caption">Reconstructing memories from SVEC...</p>
+      <button id="btn-enter" class="btn-primary" style="display: none;">
+        <span>ENTER THE JOURNEY</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <p class="audio-hint">🎧 Best experienced with headphones for dynamic 3D audio</p>
+    </div>
+  </div>
+
+  <!-- HUD: Top Bar Info -->
+  <header id="game-hud" class="game-hud">
+    <div class="hud-left">
+      <div class="chapter-badge">
+        <span class="badge-dot"></span>
+        <span id="hud-act-num">ACT I</span>
+      </div>
+      <div class="chapter-meta">
+        <h2 id="hud-act-title">The Introvert of SVEC</h2>
+        <span id="hud-act-year">Age 12 • 7th Grade</span>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <button id="btn-toggle-joystick" class="hud-btn" title="Toggle On-Screen Joystick">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="3"></rect><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"></path></svg>
+        <span id="joy-toggle-text">Joystick: ON</span>
+      </button>
+      <button id="btn-chapters" class="hud-btn" title="Chapter Select">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Chapters</span>
+      </button>
+      <button id="btn-camera" class="hud-btn" title="Toggle Camera View">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        <span id="cam-mode-text">Cinematic</span>
+      </button>
+      <button id="btn-audio" class="hud-btn" title="Toggle Sound">
+        <svg id="icon-sound-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <svg id="icon-sound-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Objective / Prompt Banner -->
+  <div id="objective-banner" class="objective-banner">
+    <div class="objective-icon">✧</div>
+    <span id="objective-text">Walk into the SVEC courtyard and look for her</span>
+  </div>
+
+  <!-- Interaction Prompt Float -->
+  <div id="interaction-hud" class="interaction-hud">
+    <div class="key-pill">E</div>
+    <span id="interaction-text">Talk to Her</span>
+  </div>
+
+  <!-- Seamless Chapter Change Toast (Non-blocking) -->
+  <div id="chapter-toast" class="chapter-toast">
+    <span id="toast-act" class="toast-act">ACT II</span>
+    <h3 id="toast-title" class="toast-title">The Serendipitous Tuition</h3>
+  </div>
+
+  <!-- Full-Screen Tap Zone for Phone & Desktop Dialogue Advance -->
+  <div id="dialogue-tap-zone" class="dialogue-tap-zone"></div>
+
+  <!-- Subtitle & Monologue Display -->
+  <div id="subtitles-container" class="subtitles-container">
+    <div class="subtitle-card">
+      <div class="subtitle-speaker" id="subtitle-speaker">INNER VOICE</div>
+      <p class="subtitle-text" id="subtitle-text">SVEC. That was where my entire world began.</p>
+      <div class="subtitle-continue-hint" id="subtitle-continue">Tap anywhere or press [Space] to continue ▸</div>
+    </div>
+  </div>
+
+  <!-- Choice & Dialogue Modal -->
+  <div id="choice-modal" class="choice-modal">
+    <div class="choice-card">
+      <p id="choice-prompt" class="choice-prompt">What will you say to her?</p>
+      <div id="choice-options" class="choice-options">
+        <!-- Dynamically injected choices -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Act Transition Title Card -->
+  <div id="title-card" class="title-card">
+    <div class="title-card-inner">
+      <span id="card-act-num" class="card-act-num">ACT I</span>
+      <h2 id="card-act-title" class="card-act-title">THE INTROVERT OF SVEC</h2>
+      <div class="card-divider"></div>
+      <p id="card-act-quote" class="card-act-quote">"Some feelings are born in silent glances and never find a voice."</p>
+    </div>
+  </div>
+
+  <!-- Interactive 3D Smartphone Overlay (Act 4: Social Media DM) -->
+  <div id="phone-modal" class="phone-modal">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-status-bar">
+        <span>02:14 AM</span>
+        <div class="phone-icons">
+          <span>5G</span>
+          <span>● 88%</span>
+        </div>
+      </div>
+      <div class="phone-header">
+        <div class="phone-back">‹</div>
+        <div class="phone-avatar-wrap">
+          <div class="phone-avatar">S</div>
+          <div>
+            <div class="phone-username">@svec_memories</div>
+            <div class="phone-status">Active now</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-chat-body" id="phone-chat-body">
+        <div class="chat-date">3 YEARS APART • TODAY</div>
+        <div class="chat-system-msg">You and @svec_memories are connected on social media.</div>
+      </div>
+      <div class="phone-input-bar">
+        <input type="text" id="phone-input" placeholder="Type a message..." readonly />
+        <button id="phone-send-btn" class="phone-send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Vault / Gallery Modal (Epilogue) -->
+  <div id="memory-modal" class="memory-modal">
+    <div class="memory-card-dialog">
+      <button id="btn-close-memory" class="btn-close">×</button>
+      <div class="memory-year" id="mem-year">2016 • SVEC TUITION</div>
+      <h3 class="memory-title" id="mem-title">The Shared Notebook</h3>
+      <p class="memory-desc" id="mem-desc">Her handwriting next to mine on page 42. Her mother was brewing tea in the kitchen. For a second, our fingers touched as she passed the ruler.</p>
+      <div class="memory-reflection" id="mem-reflection">"I wanted to build a world where she'd never have to look back in sorrow. But the tragedy was, she never knew what I would have built for her."</div>
+    </div>
+  </div>
+
+  <!-- Chapter Selection Modal -->
+  <div id="chapter-menu" class="chapter-menu">
+    <div class="chapter-menu-inner">
+      <div class="menu-header">
+        <div>
+          <h3>JOURNEY CHAPTERS</h3>
+          <p>Revisit any moment of the 10-year story</p>
+        </div>
+        <button id="btn-close-chapters" class="btn-close">×</button>
+      </div>
+      <div class="chapter-grid" id="chapter-grid">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile / Touch Controls -->
+  <div id="touch-controls" class="touch-controls active">
+    <div id="joystick-zone" class="joystick-zone" title="Drag to Move">
+      <span class="joy-arrow joy-up">▲</span>
+      <span class="joy-arrow joy-left">◄</span>
+      <span class="joy-arrow joy-right">►</span>
+      <span class="joy-arrow joy-down">▼</span>
+      <div id="joystick-thumb" class="joystick-thumb"></div>
+    </div>
+    <div class="touch-action-buttons">
+      <button id="touch-interact-btn" class="touch-btn touch-interact" title="Interact [E]">
+        <span class="touch-icon">💬</span>
+        <span class="touch-lbl">TALK</span>
+      </button>
+      <button id="touch-reset-cam-btn" class="touch-btn touch-btn-sub" title="Reset Camera">
+        <span class="touch-icon">↺</span>
+        <span class="touch-lbl">CAM</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Final Epilogue Screen -->
+  <div id="credits-screen" class="credits-screen">
+    <div class="credits-inner">
+      <h2 class="credits-title">THE ASHES OF AMBITION</h2>
+      <p class="credits-quote">
+        "She wanted luxury. She wanted a car, a lavish home, a life without risk.<br/>
+        She thought I was just a middle-class boy without vision.<br/>
+        She never knew... my dreams of empire were ten times greater than hers.<br/>
+        The only difference was: I didn't want the world for myself.<br/>
+        I wanted to lay it at her feet.<br/>
+        <br/>
+        She was my only weakness.<br/>
+        And when she left... the dream died with the love."
+      </p>
+      <div class="credits-divider"></div>
+      <div class="credits-stats">
+        <div><span>10</span> Years Lived</div>
+        <div><span>8</span> Chapters Passed</div>
+        <div><span>1</span> Shattered Heart</div>
+      </div>
+      <div class="credits-actions">
+        <button id="btn-restart" class="btn-primary"><span>REPLAY THE JOURNEY</span></button>
+        <button id="btn-freeroam" class="btn-ghost"><span>FREE-ROAM MEMORY VAULT</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop Controls Reminder -->
+  <div class="desktop-controls-hint">
+    <span><b>[WASD]</b> or <b>[Arrows]</b> Move</span>
+    <span><b>[Mouse Drag]</b> Orbit Camera</span>
+    <span><b>[E]</b> Interact</span>
+    <span><b>[Space]</b> Continue</span>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
