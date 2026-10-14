@@ -239,6 +239,7 @@ class AppUIBridge {
 
   displayNextDialogue() {
     if (this.dialogueIndex >= this.dialogueQueue.length) {
+      document.body.classList.remove('dialogue-active');
       this.subtitlesContainer.classList.remove('active');
       if (this.dialogueTapZone) this.dialogueTapZone.classList.remove('active');
       if (this.dialogueCallback) {
@@ -252,6 +253,7 @@ class AppUIBridge {
     const item = this.dialogueQueue[this.dialogueIndex];
 
     if (item.speaker === 'CHOICE') {
+      document.body.classList.remove('dialogue-active');
       this.subtitlesContainer.classList.remove('active');
       if (this.dialogueTapZone) this.dialogueTapZone.classList.remove('active');
       this.showChoiceModal(item);
@@ -259,6 +261,7 @@ class AppUIBridge {
     }
 
     // Standard Monologue or Dialogue
+    document.body.classList.add('dialogue-active');
     this.subtitleSpeaker.textContent = item.speaker;
     this.subtitleSpeaker.className = 'subtitle-speaker';
     if (item.speaker === 'HER') this.subtitleSpeaker.classList.add('girl');
@@ -410,25 +413,29 @@ class AppUIBridge {
 
   // --- VIRTUAL JOYSTICK FOR TOUCH & MOBILE ---
   setupVirtualJoystick() {
+    const pad = document.getElementById('joystick-touch-pad');
     const zone = document.getElementById('joystick-zone');
     const thumb = document.getElementById('joystick-thumb');
     if (!zone || !thumb) return;
 
-    let isTracking = false;
-    let joystickTouchId = null;
+    let activePointerId = null;
     let center = { x: 0, y: 0 };
     const maxRadius = 45;
 
-    const startTracking = (clientX, clientY, touchId = null) => {
-      isTracking = true;
-      joystickTouchId = touchId;
+    const startJoystick = (clientX, clientY, pointerId, targetEl) => {
+      activePointerId = pointerId;
+      try {
+        if (targetEl && targetEl.setPointerCapture) {
+          targetEl.setPointerCapture(pointerId);
+        }
+      } catch (err) {}
       const rect = zone.getBoundingClientRect();
       center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      updateThumb(clientX, clientY);
+      moveJoystick(clientX, clientY);
     };
 
-    const updateThumb = (clientX, clientY) => {
-      if (!isTracking || !this.engine) return;
+    const moveJoystick = (clientX, clientY) => {
+      if (activePointerId === null || !this.engine) return;
       const dx = clientX - center.x;
       const dy = clientY - center.y;
       const dist = Math.hypot(dx, dy);
@@ -441,115 +448,64 @@ class AppUIBridge {
       thumb.style.transform = `translate(calc(-50% + ${thumbX}px), calc(-50% + ${thumbY}px))`;
 
       // Movement vector strength is between 0 and 1
-      const strength = Math.min(1.0, Math.max(0.1, dist / (maxRadius * 0.6)));
+      const strength = Math.min(1.0, Math.max(0.15, dist / (maxRadius * 0.6)));
       // In inputVector: X is right (+1), left (-1). Y is up (-1), down (+1)
       this.engine.touchVector.set(Math.cos(angle) * strength, Math.sin(angle) * strength);
     };
 
-    const stopTracking = () => {
-      isTracking = false;
-      joystickTouchId = null;
-      thumb.style.transform = 'translate(-50%, -50%)';
-      if (this.engine) this.engine.touchVector.set(0, 0);
-    };
-
-    // 1. Direct Touch on Joystick Zone
-    zone.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const touch = e.changedTouches[0];
-      startTracking(touch.clientX, touch.clientY, touch.identifier);
-    }, { passive: false });
-
-    // 2. Extended Touch Area: Touching anywhere in bottom-left movement quadrant
-    const touchControls = document.getElementById('touch-controls');
-    if (touchControls) {
-      touchControls.addEventListener('touchstart', (e) => {
-        if (isTracking) return;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-          const t = e.changedTouches[i];
-          // If in bottom-left area and not on buttons
-          if (t.clientX < window.innerWidth * 0.45 && t.clientY > window.innerHeight * 0.35 &&
-              !t.target.closest('.touch-btn') && !t.target.closest('.hud-btn')) {
-            e.preventDefault();
-            startTracking(t.clientX, t.clientY, t.identifier);
-            break;
+    const endJoystick = (pointerId, targetEl) => {
+      if (activePointerId !== null && pointerId === activePointerId) {
+        activePointerId = null;
+        try {
+          if (targetEl && targetEl.releasePointerCapture) {
+            targetEl.releasePointerCapture(pointerId);
           }
-        }
-      }, { passive: false });
-    }
-
-    // 3. Global Window Touch Move - track only the joystick finger
-    window.addEventListener('touchmove', (e) => {
-      if (!isTracking) return;
-      for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        if (touch.identifier === joystickTouchId) {
-          e.preventDefault();
-          updateThumb(touch.clientX, touch.clientY);
-          break;
-        }
-      }
-    }, { passive: false });
-
-    // 4. Global Window Touch End / Cancel
-    const handleTouchEnd = (e) => {
-      if (!isTracking) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === joystickTouchId) {
-          stopTracking();
-          break;
-        }
-      }
-    };
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
-
-    // 5. Mouse fallback for testing
-    zone.addEventListener('mousedown', (e) => {
-      startTracking(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (isTracking && joystickTouchId === null) {
-        updateThumb(e.clientX, e.clientY);
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isTracking && joystickTouchId === null) {
-        stopTracking();
-      }
-    });
-
-    // 6. Direct Directional Arrow Tap/Hold Fallback
-    const arrowMap = [
-      { sel: '.joy-up', vec: { x: 0, y: -1 } },
-      { sel: '.joy-down', vec: { x: 0, y: 1 } },
-      { sel: '.joy-left', vec: { x: -1, y: 0 } },
-      { sel: '.joy-right', vec: { x: 1, y: 0 } }
-    ];
-    arrowMap.forEach(({ sel, vec }) => {
-      const el = zone.querySelector(sel);
-      if (!el) return;
-
-      const onArrowDown = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        thumb.style.transform = `translate(calc(-50% + ${vec.x * 25}px), calc(-50% + ${vec.y * 25}px))`;
-        if (this.engine) this.engine.touchVector.set(vec.x, vec.y);
-      };
-      const onArrowUp = (e) => {
-        e.preventDefault();
+        } catch (err) {}
         thumb.style.transform = 'translate(-50%, -50%)';
         if (this.engine) this.engine.touchVector.set(0, 0);
-      };
+      }
+    };
 
-      el.addEventListener('touchstart', onArrowDown, { passive: false });
-      el.addEventListener('touchend', onArrowUp, { passive: false });
-      el.addEventListener('mousedown', onArrowDown);
-      el.addEventListener('mouseup', onArrowUp);
-    });
+    // Bind pointer events on both zone and pad
+    const bindPointer = (el) => {
+      if (!el) return;
+      el.addEventListener('pointerdown', (e) => {
+        if (activePointerId !== null) return;
+        e.preventDefault();
+        e.stopPropagation();
+        startJoystick(e.clientX, e.clientY, e.pointerId, el);
+      }, { passive: false });
+
+      el.addEventListener('pointermove', (e) => {
+        if (e.pointerId === activePointerId) {
+          e.preventDefault();
+          moveJoystick(e.clientX, e.clientY);
+        }
+      }, { passive: false });
+
+      el.addEventListener('pointerup', (e) => {
+        endJoystick(e.pointerId, el);
+      }, { passive: true });
+
+      el.addEventListener('pointercancel', (e) => {
+        endJoystick(e.pointerId, el);
+      }, { passive: true });
+    };
+
+    bindPointer(zone);
+    if (pad) bindPointer(pad);
+
+    // Global backup
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerId === activePointerId) {
+        endJoystick(e.pointerId, null);
+      }
+    }, { passive: true });
+    window.addEventListener('pointercancel', (e) => {
+      if (e.pointerId === activePointerId) {
+        endJoystick(e.pointerId, null);
+      }
+    }, { passive: true });
 
     // Mobile interact button (also acts as continue button during dialogue)
     document.getElementById('touch-interact-btn').addEventListener('click', () => {

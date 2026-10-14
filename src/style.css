@@ -40,6 +40,8 @@ html, body {
   color: var(--text-main);
   font-family: var(--font-sans);
   position: fixed;
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 /* 3D Canvas */
@@ -1031,80 +1033,92 @@ body.is-touch .touch-controls {
   display: block !important;
 }
 
+/* Extended Touch Pad for Left Thumb */
+.joystick-touch-pad {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 48vw;
+  height: 42vh;
+  min-width: 170px;
+  min-height: 170px;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 70;
+}
+
 /* Virtual Joystick */
 .joystick-zone {
   position: absolute;
-  bottom: 28px;
-  left: 28px;
-  width: 148px;
-  height: 148px;
-  background: radial-gradient(circle, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+  bottom: 24px;
+  left: 24px;
+  width: 136px;
+  height: 136px;
+  background: radial-gradient(circle, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.96) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 2px solid rgba(212, 175, 55, 0.5);
+  border: 2px solid rgba(212, 175, 55, 0.55);
   border-radius: 50%;
   pointer-events: auto;
   touch-action: none;
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), inset 0 0 16px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), inset 0 0 16px rgba(212, 175, 55, 0.25);
   cursor: grab;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .joystick-zone:active {
   cursor: grabbing;
-  border-color: rgba(212, 175, 55, 0.9);
+  border-color: rgba(212, 175, 55, 0.95);
 }
 
-/* Directional Arrow Indicators on Joystick Base (Interactive) */
+/* While dialogue is active on mobile */
+body.dialogue-active .joystick-zone {
+  opacity: 0.18;
+  pointer-events: none;
+  filter: grayscale(80%);
+  transform: scale(0.9);
+}
+body.dialogue-active .joystick-touch-pad {
+  pointer-events: none;
+}
+body.dialogue-active .touch-btn-sub {
+  opacity: 0.25;
+}
+body.dialogue-active #touch-interact-btn {
+  animation: pulseInteract 1.2s infinite ease-in-out;
+}
+
+/* Directional Arrow Indicators on Joystick Base (Visual Only) */
 .joy-arrow {
   position: absolute;
-  font-size: 0.85rem;
-  color: rgba(212, 175, 55, 0.75);
+  font-size: 0.82rem;
+  color: rgba(212, 175, 55, 0.7);
   font-weight: 800;
-  pointer-events: auto;
-  cursor: pointer;
-  padding: 6px;
+  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
-  transition: transform 0.1s ease, color 0.1s ease;
-}
-.joy-arrow:active {
-  color: #ffd700;
-  transform: scale(1.25);
 }
 .joy-arrow.joy-up {
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
 }
-.joy-arrow.joy-up:active {
-  transform: translateX(-50%) scale(1.25);
-}
 .joy-arrow.joy-down {
   bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
-}
-.joy-arrow.joy-down:active {
-  transform: translateX(-50%) scale(1.25);
 }
 .joy-arrow.joy-left {
   left: 6px;
   top: 50%;
   transform: translateY(-50%);
 }
-.joy-arrow.joy-left:active {
-  transform: translateY(-50%) scale(1.25);
-}
 .joy-arrow.joy-right {
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-}
-.joy-arrow.joy-right:active {
-  transform: translateY(-50%) scale(1.25);
 }
 
 .joystick-thumb {
@@ -1203,10 +1217,79 @@ body.is-touch .touch-controls {
 
 @media (max-width: 768px) {
   .desktop-controls-hint { display: none; }
-  .hud-left { padding: 6px 14px 6px 8px; }
-  .chapter-meta h2 { font-size: 0.85rem; }
-  .loading-title { font-size: 2.4rem; }
-  .subtitle-text { font-size: 1.05rem; }
-  .phone-frame { width: 320px; height: 560px; }
-  .credits-quote { font-size: 0.95rem; }
+  .hud-left { padding: 6px 12px 6px 8px; gap: 8px; }
+  .chapter-badge { padding: 3px 8px; font-size: 0.65rem; }
+  .chapter-meta h2 { font-size: 0.8rem; }
+  .chapter-meta span { display: none; }
+  .hud-right { gap: 6px; }
+  .hud-btn { padding: 6px 10px; font-size: 0.72rem; }
+  .hud-btn span { display: none; }
+  .hud-btn #joy-toggle-text { display: inline; font-size: 0.68rem; }
+  
+  .objective-banner {
+    top: 64px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  /* CRITICAL: Elevate Subtitles Cleanly Above Controls to Eliminate Overlap */
+  .subtitles-container {
+    bottom: 185px !important;
+    width: 94% !important;
+    max-width: 94% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  .subtitles-container.active {
+    transform: translateX(-50%) translateY(0) !important;
+  }
+  .subtitle-card {
+    padding: 16px 18px !important;
+    border-radius: 14px !important;
+  }
+  .subtitle-speaker {
+    font-size: 0.65rem !important;
+    margin-bottom: 4px !important;
+  }
+  .subtitle-text {
+    font-size: 1.0rem !important;
+    line-height: 1.45 !important;
+  }
+  .subtitle-continue-hint {
+    margin-top: 6px !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Mobile Touch Controls Positioning */
+  .joystick-zone {
+    bottom: 20px !important;
+    left: 18px !important;
+    width: 130px !important;
+    height: 130px !important;
+  }
+  .joystick-thumb {
+    width: 52px !important;
+    height: 52px !important;
+  }
+  .touch-action-buttons {
+    bottom: 22px !important;
+    right: 18px !important;
+    gap: 12px !important;
+  }
+  .touch-btn {
+    width: 62px !important;
+    height: 62px !important;
+  }
+  .touch-btn .touch-icon {
+    font-size: 1.15rem !important;
+  }
+  .touch-btn .touch-lbl {
+    font-size: 0.58rem !important;
+  }
+
+  .loading-title { font-size: 2.2rem; }
+  .phone-frame { width: 300px; height: 520px; }
+  .credits-quote { font-size: 0.9rem; }
 }

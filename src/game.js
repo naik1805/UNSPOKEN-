@@ -153,7 +153,7 @@ export class GameEngine {
         // Only track touch if it's on the right half of screen and not on buttons or joystick
         if (cameraTouchId === null && t.clientX > window.innerWidth * 0.45 &&
             !t.target.closest('.touch-btn') && !t.target.closest('.hud-btn') &&
-            !t.target.closest('#joystick-zone') && !t.target.closest('.modal')) {
+            !t.target.closest('#joystick-zone') && !t.target.closest('#joystick-touch-pad') && !t.target.closest('.modal')) {
           cameraTouchId = t.identifier;
           touchStartX = t.clientX;
           touchStartY = t.clientY;
