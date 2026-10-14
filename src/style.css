@@ -1023,12 +1023,12 @@ body.cinematic .letterbox { height: 7vh; }
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 55;
-  display: none;
+  z-index: 70;
+  display: block;
 }
 .touch-controls.active,
 body.is-touch .touch-controls {
-  display: block;
+  display: block !important;
 }
 
 /* Virtual Joystick */
@@ -1036,50 +1036,75 @@ body.is-touch .touch-controls {
   position: absolute;
   bottom: 28px;
   left: 28px;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 2px solid rgba(212, 175, 55, 0.4);
+  width: 148px;
+  height: 148px;
+  background: radial-gradient(circle, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(212, 175, 55, 0.5);
   border-radius: 50%;
   pointer-events: auto;
   touch-action: none;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(212, 175, 55, 0.15);
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), inset 0 0 16px rgba(212, 175, 55, 0.2);
   cursor: grab;
 }
 .joystick-zone:active {
   cursor: grabbing;
-  border-color: rgba(212, 175, 55, 0.8);
+  border-color: rgba(212, 175, 55, 0.9);
 }
 
-/* Directional Arrow Indicators on Joystick Base */
+/* Directional Arrow Indicators on Joystick Base (Interactive) */
 .joy-arrow {
   position: absolute;
-  font-size: 0.75rem;
-  color: rgba(212, 175, 55, 0.6);
+  font-size: 0.85rem;
+  color: rgba(212, 175, 55, 0.75);
   font-weight: 800;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 6px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+.joy-arrow:active {
+  color: #ffd700;
+  transform: scale(1.25);
 }
 .joy-arrow.joy-up {
-  top: 8px;
+  top: 6px;
   left: 50%;
   transform: translateX(-50%);
+}
+.joy-arrow.joy-up:active {
+  transform: translateX(-50%) scale(1.25);
 }
 .joy-arrow.joy-down {
-  bottom: 8px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
 }
+.joy-arrow.joy-down:active {
+  transform: translateX(-50%) scale(1.25);
+}
 .joy-arrow.joy-left {
-  left: 8px;
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
 }
+.joy-arrow.joy-left:active {
+  transform: translateY(-50%) scale(1.25);
+}
 .joy-arrow.joy-right {
-  right: 8px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
+}
+.joy-arrow.joy-right:active {
+  transform: translateY(-50%) scale(1.25);
 }
 
 .joystick-thumb {

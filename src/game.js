@@ -142,39 +142,54 @@ export class GameEngine {
       this.isDraggingMouse = false;
     });
 
-    // Touch swiping to rotate camera on the right half of the screen
+    // Touch swiping to rotate camera on the right half of the screen (multi-touch safe)
     let touchStartX = 0;
     let touchStartY = 0;
-    let isTouchOrbiting = false;
+    let cameraTouchId = null;
 
     window.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        const t = e.touches[0];
-        // If touch is on the right half of the screen and not on a button
-        if (t.clientX > window.innerWidth * 0.4 && !t.target.closest('.touch-btn') && !t.target.closest('.hud-btn')) {
-          isTouchOrbiting = true;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        // Only track touch if it's on the right half of screen and not on buttons or joystick
+        if (cameraTouchId === null && t.clientX > window.innerWidth * 0.45 &&
+            !t.target.closest('.touch-btn') && !t.target.closest('.hud-btn') &&
+            !t.target.closest('#joystick-zone') && !t.target.closest('.modal')) {
+          cameraTouchId = t.identifier;
           touchStartX = t.clientX;
           touchStartY = t.clientY;
+          break;
         }
       }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
-      if (!isTouchOrbiting || e.touches.length === 0) return;
-      const t = e.touches[0];
-      const deltaX = t.clientX - touchStartX;
-      const deltaY = t.clientY - touchStartY;
+      if (cameraTouchId === null) return;
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        if (t.identifier === cameraTouchId) {
+          const deltaX = t.clientX - touchStartX;
+          const deltaY = t.clientY - touchStartY;
 
-      this.cameraAngle.h += deltaX * 0.006;
-      this.cameraAngle.v = Math.max(0.05, Math.min(1.2, this.cameraAngle.v + deltaY * 0.005));
+          this.cameraAngle.h += deltaX * 0.006;
+          this.cameraAngle.v = Math.max(0.05, Math.min(1.2, this.cameraAngle.v + deltaY * 0.005));
 
-      touchStartX = t.clientX;
-      touchStartY = t.clientY;
+          touchStartX = t.clientX;
+          touchStartY = t.clientY;
+          break;
+        }
+      }
     }, { passive: true });
 
-    window.addEventListener('touchend', () => {
-      isTouchOrbiting = false;
-    }, { passive: true });
+    const endCameraTouch = (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === cameraTouchId) {
+          cameraTouchId = null;
+          break;
+        }
+      }
+    };
+    window.addEventListener('touchend', endCameraTouch, { passive: true });
+    window.addEventListener('touchcancel', endCameraTouch, { passive: true });
   }
 
   onResize() {
@@ -192,6 +207,8 @@ export class GameEngine {
 
     // Reset interaction & state
     this.canInteract = false;
+    this.isDialogueActive = false;
+    this.touchVector.set(0, 0);
     this.ui.setInteractionActive(false);
     this.isDesaturated = false;
     document.getElementById('heartbeat-vignette').className = 'vignette';
